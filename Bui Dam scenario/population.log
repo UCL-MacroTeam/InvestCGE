@@ -1,0 +1,17 @@
+
+--- Job population.gms Start 05/20/19 16:32:39 24.7.4 r58773 WEX-WEI x86 64bit/MS Windows
+GAMS 24.7.4   Copyright (C) 1987-2016 GAMS Development. All rights reserved
+Licensee: UCL Energy Institute                           W151014:0929AO-WIN
+          University College London                                 DC11723
+          License for teaching and research at degree granting institutions
+--- Starting compilation
+--- population.gms(3) 2 Mb
+--- call gdxxrw "Ghana population.xlsx" o=ghana_population par=pop_delta Rng='population_15_65!A2:B97' rdim=1 par=pop_total Rng='total_population!A2:B97' rdim=1
+
+GDXXRW           24.7.4 r58773 Released Sep 19, 2016 VS8 x86 32bit/MS Windows 
+Input file : C:\Work\IFPRI CGE\Bui Dam scenario\Ghana population.xlsx
+Output file: C:\Work\IFPRI CGE\Bui Dam scenario\ghana_population.gdx
+Total time = 1593 Ms
+--- Starting execution - empty program
+*** Status: Normal completion
+--- Job population.gms Stop 05/20/19 16:32:41 elapsed 0:00:01.805

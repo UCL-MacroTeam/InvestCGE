@@ -1,0 +1,9 @@
+*.log
+*.lst
+*.lxi
+*.~gm
+
+Bui dam scenario/*.log
+Bui dam scenario/*.lst
+Bui dam scenario/*.lxi
+Bui dam scenario/*.~gm
