@@ -315,30 +315,30 @@ parameters PVALUE(APROJ)                 Project value in USD
  LOANPRODPRICE(APROJ,C)  =      0 ;
 
 * initialising dummy project with a very low project value
- PVALUE(APROJ)  =       0.000001     ;
+ PVALUE(APROJ)           =       0.000001 ;
 * USD to local currency parity
- REXR    =       3.5       ;
+ REXR                    =       3.5 ;
  PLVALUE(APROJ) =       PVALUE(APROJ) * REXR   ;
 
 * setting default financing through foreign loans. This can be altered at any point after the model calibration
 
- sPFIN("GCSPEND",APROJ)        =       0       ;
- sPFIN("GSSPEND",APROJ)        =       0       ;
- sPFIN("GBOR",APROJ)           =       0       ;
- sPFIN("FBOR",APROJ)           =       1       ;
- sPFIN("GRANT",APROJ)          =       0       ;
+ sPFIN("GCSPEND",APROJ)  =       0 ;
+ sPFIN("GSSPEND",APROJ)  =       0 ;
+ sPFIN("GBOR",APROJ)     =       0 ;
+ sPFIN("FBOR",APROJ)     =       1 ;
+ sPFIN("GRANT",APROJ)    =       0 ;
 
 * calculating financed values by source
  PFIN(FIN,APROJ) =       sPFIN(FIN,APROJ)*PLVALUE(APROJ) ;
 
 * initialising the cost structure of the project construction activity
- sPCOST("C-IND",APROJ)   = 0     ;
- sPCOST("C-CONS",APROJ)  = 0.4   ;
- sPCOST("C-SERV",APROJ)  = 0.07  ;
- sPCOST("C-ELEC",APROJ)  = 0     ;
- sPCOST("LABOR",APROJ)   = 0.23  ;
-*> value share of other direct imports not available in the model SAM and/or commodities which require by-passing the Armington specification e.g. special equipment or services not available domestically
- sPCOST("ROW",APROJ) = 0.3    ;
+ sPCOST("C-IND",APROJ)   =       0    ;
+ sPCOST("C-CONS",APROJ)  =       0.4  ;
+ sPCOST("C-SERV",APROJ)  =       0.07 ;
+ sPCOST("C-ELEC",APROJ)  =       0    ;
+ sPCOST("LABOR",APROJ)   =       0.23 ;
+* value share of other direct imports not available in the model SAM and/or commodities which require by-passing the Armington specification e.g. special equipment or services not available domestically
+ sPCOST("ROW",APROJ)     =       0.3  ;
 
  PCOST(AC,APROJ)$sPCOST(AC,APROJ)    =       sPCOST(AC,APROJ)*PLVALUE(APROJ)      ;
 
@@ -679,9 +679,6 @@ PARAMETERS
   QINV0(C)       quantity of fixed investment demand
 *** INVESTCGE
   QINVTOT0       quantity of total investment
-  KSTOCK0        quantity of end of simulation capital stock
-  KSTOCKP0       quantity of start of simulation capital stock
-  CAPG0          capital stock growth rate
 *** /INVESTCGE
   QM0(C)         quantity of imports
   QQ0(C)         quantity of composite goods supply
@@ -1304,9 +1301,6 @@ DISPLAY
 
 *** INVESTCGE
  QINVTOT0      = SUM(C, QINV0(C) + qdst(C))      ;
- KSTOCKP0      = QINVTOT0 * 11.5 ;
- KSTOCK0       = KSTOCKP0*(1-depr) + QINVTOT0     ;
- CAPG0         = KSTOCK0 / KSTOCKP0      ;
 *** /INVESTCGE
 *5. VARIABLE DECLARATIONS ###########################################
 *This section only includes variables that appear in the model.
@@ -1373,9 +1367,6 @@ VARIABLES
   QINV(C)       quantity of fixed investment demand
 *** VNINVESTCGE
   QINVTOT       total investment demand  - added for model dynamics
-  KSTOCK        end of period stock
-  KSTOCKP       start of period stock
-  CAPG          capital stock growth
 *** /INVESTCGE
   QM(C)         quantity of imports
   QQ(C)         quantity of composite goods supply
@@ -1399,7 +1390,6 @@ VARIABLES
   YI(INS)       income of (domestic non-governmental) institution ins
 *** INVESTCGE
   YTAX          government tax income
-  TINV          total investment value
 *** /INVESTCGE
   ;
 
@@ -1410,12 +1400,6 @@ VARIABLES
 $INCLUDE VARINIT_ENE.INC
 *** /INVESTCGE
 
-*Optional include file that imposes lower limits for selected variables
-*The inclusion of this file may improve solver performance.
-*$INCLUDE VARLOW.INC
-
-
-$STITLE IFPRI CGE modeling system, Energy version
 
 *7. EQUATION DECLARATIONS ###########################################
 
@@ -1503,7 +1487,6 @@ EQUATIONS
  TAXINCOME       government tax income
  PROJEXPENDITURE(APROJ) Project actual expenditure
  PRIVSAV         total private savings
- INVVAL          total investment value
 *** /INVESTCGE
 *System constraint block===================================
  COMEQUIL(C)     composite commodity market equilibrium
@@ -1518,8 +1501,6 @@ EQUATIONS
  MPSDEF(INS)     marg prop to save for inst ins
 *** INVESTCGE
  INVESTMENT      total investment
- KSTOCKEQ          capital stock post simulation
- CAPGROWTH       capital stock growth rate
 *** /INVESTCGE
  SAVINVBAL       savings-investment balance
  TABSEQ          total absorption
@@ -1596,13 +1577,17 @@ EQUATIONS
 *CESVAPRD, CESVAFOC, INTDEM apply at the bottom of the technology nest
 *(for all activities).
 
+ CESVAFOC(F,A)$deltava(F,A)..
+   WF(F)*wfdist(F,A) =E=
+   PVA(A)*(1-tva(A))
+   * QVA(A) * SUM(FP, deltava(FP,A)*QF(FP,A)**(-rhova(A)) )**(-1)
+   *deltava(F,A)*QF(F,A)**(-rhova(A)-1);
+
+
 *** INVESTCGE
  CESVAPRD(A)$AVACES(A)..
    QVA(A) =E= alphava(A)*(SUM(F,
                       deltava(F,A)*QF(F,A)**(-rhova(A))) )**(-1/rhova(A)) ;
-*** /INVESTCGE
-
-*** INVESTCGE
  CESVAPRDENE(A)$AVACES(A)..
    QVA(A) =E= alpha2va(A)*(SUM(F,
                       delta2va(F,A)*QF(F,A)**(-rhova(A))) )**(-1/rhova(A)) ;
@@ -1614,13 +1599,6 @@ EQUATIONS
  CESVAEPRD(A)$AVAECES(A)..
    QVAE(A) =E= alphavae(A)*(
                       deltavae_va(A)*QVA(A)**(-rhovae(A)) + deltavae_ene(A)*QENE(A)**(-rhovae(A)) )**(-1/rhovae(A)) ;
-
- CESVAFOC(F,A)$deltava(F,A)..
-   WF(F)*wfdist(F,A) =E=
-   PVA(A)*(1-tva(A))
-   * QVA(A) * SUM(FP, deltava(FP,A)*QF(FP,A)**(-rhova(A)) )**(-1)
-   *deltava(F,A)*QF(F,A)**(-rhova(A)-1);
-
 
  CESVAFOCENE(F,A)$delta2va(F,A)..
    WF(F)*wfdist(F,A) =E=
@@ -1842,30 +1820,24 @@ EQUATIONS
   MPS(INSDNG)  =E= mpsbar(INSDNG)*(1 + MPSADJ*mps01(INSDNG))
                    + DMPS*mps01(INSDNG);
 
+*** INVESTCGE
+* adding a total investment demand variable
  INVESTMENT..    QINVTOT =e=  SUM(C, QINV(C) + qdst(C)) + WALRAS ;
 
+* modifying the Savings-Investment balance to include domestic project  finance and repayments
  SAVINVBAL..
    SUM(INSDNG, MPS(INSDNG) * (1 - TINS(INSDNG)) * YI(INSDNG))
     + GSAV - sum(APROJ,pfin("GBOR",APROJ)) + FSAV*EXR + SUM(APROJ,repayment(APROJ,"GBOR")) =E=
             SUM(C, PQ(C)*QINV(C)) + SUM(C, PQ(C)*qdst(C)) + WALRAS;
- INVVAL..
-         TINV =E=        SUM(C, PQ(C)*QINV(C)) + SUM(C, PQ(C)*qdst(C)) + WALRAS  ;
-
+* total private savings value
  PRIVSAV..
    PSAV =E= SUM(INSDNG, MPS(INSDNG) * (1 - TINS(INSDNG)) * YI(INSDNG))   ;
-* capital stock accumulation
- KSTOCKEQ..        KSTOCK  =e=  KSTOCKP*(1-depr) + QINVTOT  ;
- CAPGROWTH..     CAPG    =e=  KSTOCK / KSTOCKP   ;
 
-* total absorption
-* =  =e= household market demand + household non-market demand + gov demand + investment demand + inventories
  TABSEQ..
   TABS =E=
    SUM((C,H), PQ(C)*QH(C,H)) + SUM((A,C,H), PXAC(A,C)*QHA(A,C,H))
   + SUM(C, PQ(C)*QG(C)) + SUM(C, PQ(C)*QINV(C)) + SUM(C, PQ(C)*qdst(C));
 
-* investment share of absorbtion
-* = =e= investment demand + invetories
  INVABEQ.. INVSHR*TABS =E= SUM(C, PQ(C)*QINV(C)) + SUM(C, PQ(C)*qdst(C)) ;
 
 * government consumption share in absorbtion
@@ -1878,7 +1850,7 @@ EQUATIONS
 
 *9. MODEL DEFINITION ###############################################
 
- MODEL STANDCGE  standard CGE model
+ MODEL INVESTCGE investment-oriented & energy CGE model
  /
 *Price block (10)
  PMDEF.PM
@@ -1887,21 +1859,28 @@ EQUATIONS
  PXDEF.PX
  PDDDEF.PDD
  PADEF.PA
- PINTADEF.PINTA
- PVADEF.PVA
+ PINTADEFENE.PINTA
+ PVAEDEFENE.PVAE
  CPIDEF
  DPIDEF
 
 *Production and trade block (17)
  CESAGGPRD
  CESAGGFOC
- LEOAGGINT
- LEOAGGVA
+ LEOAGGINTENE
+ LEOAGGVAE
  LEOAGGINTPROJ
  LEOAGGFACTPROJ
- CESVAPRD.QVA
- CESVAFOC
- INTDEM.QINT
+ CESVAPRDENE.QVA
+ CESENEPRD.QENE
+ CESVAEPRD.QVAE
+ CESVAFOCENE
+ CESENEFOC
+ CESVAEFOC_ENE
+ CESVAEFOC_VA
+ LEOAGGVA2
+ LEOAGGPVAE
+ INTDEMENE.QINT
  COMPRDFN.PXAC
  OUTAGGFN.QX
  OUTAGGFOC.QXAC
@@ -1922,31 +1901,30 @@ EQUATIONS
  HMDEM.QH
  HADEM.QHA
  EGDEF.EG
- YGDEF.YG
  YGPROJDEF.YGPROJ
+ YGDEF.YG
+ TAXINCOME
  PROJEXPENDITURE.PROJEXP
  GOVDEM.QG
  GOVBAL
  INVDEM.QINV
+ PRIVSAV
 
 *System-constraint block (9)
  FACEQUIL
  LABSUPPLY
+ LANDSUPPLY
  COMEQUIL
  CURACCBAL
  TINSDEF.TINS
  MPSDEF.MPS
- SAVINVBAL.WALRAS
+ SAVINVBAL
  INVESTMENT.QINVTOT
- KSTOCKEQ.KSTOCK
- CAPGROWTH.CAPG
  TABSEQ.TABS
  INVABEQ
  GDABEQ
  /
  ;
-
-$include energy_model_def.inc
 
 *10. FIXING VARIABLES NOT IN MODEL AT ZERO ##########################
 
@@ -1973,8 +1951,6 @@ $include energy_model_def.inc
   TRII.FX(INSDNG,INSDNGP)$(NOT SAM(INSDNG,INSDNGP)) = 0;
   YI.FX(INS)$(NOT INSD(INS)) = 0;
   YIF.FX(INS,F)$((NOT INSD(INS)) OR (NOT SAM(INS,F))) = 0;
-
-  KSTOCKP.FX = KSTOCKP0  ;
 
 *11. MODEL CLOSURE ##################################################
 $ontext
@@ -2003,17 +1979,17 @@ to generate enough savings to finance exogenous investment quantities
 The CPI is the model numeraire.
 $offtext
 
-
-* REPAYMENT("A-PROJ","GBOR") = 10 ;
-* LOANPROD("A-PROJ","C-AGR") = 10 ;
-* PLVALUE("A-PROJ") =     100       ;
-* PCOST(AC,APROJ)$sPCOST(AC,APROJ)    =       sPCOST(AC,APROJ)*PLVALUE(APROJ)      ;
+*** INVESTCE
+* changes to the model closure rules
 
 *Factor markets=======
 
+* Labour and land supply are endogenised
   QFS.L(FLAB)      = QFS0(FLAB);
   QFS.L(FLND)      = QFS0(FLND);
+
   QFS.FX(F)$(not FLAB(F) and not FLND(F))        = QFS0(F);
+* initialising project capital to zero
   QFSPROJ.FX(F,APROJ)            = 0 ;
   WF.LO(F)        = -inf;
   WF.UP(F)        = +inf;
@@ -2034,6 +2010,7 @@ $offtext
 
 
 *Current government balance=======
+** enabling government spending adjustment
 
 *GSAV.FX     = GSAV0 ;
  TINSADJ.FX  = TINSADJ0;
@@ -2055,43 +2032,12 @@ GOVSHR.FX   = GOVSHR0 ;
  CPI.FX        = CPI0;
 *DPI.FX        = DPI0;
 
+*** /INVESTCGE
 
 *12. DISPLAY OF MODEL PARAMETERS AND VARIABLES ######################
 
 
 
-$ontext
-
-DISPLAY
-*All parameters in this file and include files are displayed in
-*alphabetical order.
-
-ALPHAA   , ALPHAVA0  , ALPHAAC  , ALPHAQ   , ALPHAT    , ALPHAVA
-BETAH    , BETAM     , BUDSHR   , BUDSHR2  , BUDSHRCHK , CPI0
-CUTOFF   , CWTS      , CWTSCHK  , DELTAA   , DELTAAC   , DELTAQ
-DELTAT   , DELTAVA   , DPI0     , DMPS0    , DTINS0    , DWTS
-DWTSCHK  , EG0       , EH0      , ELASAC   , ELASCHK   , EXR0
-FRISCH   , FSAV0     , GADJ0    , GAMMAH   , GAMMAM    , GOVSHR0
-GSAV0    , IADJ0     , ICA      , ICD      , ICE       , ICM
-INTA     , INVSHR0   , IVA      , LESELAS1 , LESELAS2  , MPS0
-MPSADJ0  , MPSBAR    , PA0      , PDD0     , PDS0      , PE0
-PINTA0   , PM0       , POP      , PQ0      , PRODELAS  , PRODELAS2
-PVA0     , PWE0      , PWM0     , PX0      , PXAC0     , QA0
-QBARG    , QBARG0    , QBARINV  , QD0      , QDST      , QDST0
-QE0      , QF0       , QF2BASE  , QFBASE   , QFS0      , QFSBASE
-QG0      , QH0       , QHA0     , QINT0    , QINTA0    , QINV0
-QM0      , QQ0       , QT0      , QVA0     , QX0       , QXAC0
-RHOA     , RHOAC     , RHOQ     , RHOT     , RHOVA     , SAM
-SAMBALCHK, SHCTD     , SHCTE     , SHCTM    , SHIF     , SHIFCHK
-SHII     , SHRHOME   , SUMABSDEV , SUPERNUM , TA       , TA0
-TABS0    , TAXPAR   , TE        , TE0      , TF        , TF0
-THETA    , TINS0     , TINSADJ0 , TINSBAR  , TM        , TM0
-TQ       , TQ0       , TRADELAS , TRII0    , TRNSFR    , TVA
-TVA0     , WALRAS0   , WF0      , WFA      , WFDIST0   , YF0
-YG0      , YI0       , YIF0
-;
-
-$offtext
 *13. SOLUTION STATEMENT #############################################
 
 OPTIONS ITERLIM = 1000, LIMROW = 6, LIMCOL = 6, SOLPRINT=ON,
@@ -2106,11 +2052,8 @@ has a number of display statements, so when running experiments it is
 usually not necessary to provide a solution print as well.
 $offtext
 
- STANDCGE.HOLDFIXED   = 1 ;
- STANDCGE.TOLINFREP   = .0001 ;
-
- ENERGYCGE.HOLDFIXED   = 1 ;
- ENERGYCGE.TOLINFREP   = .0001 ;
+ INVESTCGE.HOLDFIXED   = 1 ;
+ INVESTCGE.TOLINFREP   = .0001 ;
 
 $ontext
 The HOLDFIXED option converts all variables which are fixed (.FX) into
@@ -2124,701 +2067,12 @@ listing.
 $offtext
 
 
-* SOLVE STANDCGE USING MCP ;
- SOLVE ENERGYCGE USING MCP ;
-
- display QA.L, QA0, QINT.L, QINT0, QVA.L, QVA0, PA.L, PA0, PINTA.L, PINTA0, PVA.L, PVA0, QINTA.L, QINTA0;
-
-*$stop
-
-*** base-mode post-simulation calculations
-
-parameters dQQ(C)        Changes in commodity demand     ;
-
-
- dQQ(C)  =       QQ.L(C) - QQ0(C)        ;
-
-display dQQ      ;
+ SOLVE INVESTCGE USING MCP ;
 
 display WALRAS.L ;
 
 ABORT$(WALRAS.L >10**(-6)) "WALRAS inconsistency - calibration run" ;
 
+$include dynamics.gms
 
-*$stop
-
-SETS
-
- IGDPX  Items for GDP and national accounts
-  /
-  ABSORP   absorption
-  PRVCON   private consumption
-  FIXINV   fixed investment
-  DSTOCK   stock change
-  GOVCON   government consumption
-  PROJINV  project investment
-  EXPORTS  exports
-  IMPORTS  imports
-  GDPCP    GDP at constant prices (real GDP)
-  GDPMP    GDP at market prices (alt. 1: spending)
-  GDPMP2   GDP at market prices (alt. 2: value-added)
-  NETITAX  net indirect taxes
-  GDPFC2   GDP at factor cost
-  /
-
- IGDPXX(IGDPX)  Items for GDPMP summation
-  /
-  PRVCON   private consumption
-  FIXINV   fixed investment
-  PROJINV  project investment
-  DSTOCK   stock change
-  GOVCON   government consumption
-  EXPORTS  exports
-  IMPORTS  imports
-  /
-
- KGDPX  second index in GDP tables
- /
- VALUE, RVALUE, PERC-GDP, PERC-TOT
- /       ;
-
-PARAMETERS
- GDPBASE0(IGDPX,KGDPX) Initial aggregate national accounts summary
- GDPERR                error if alt GDP definitions are not identical
- ;
-*================================
-
-PARAMETERS
-         GDPBASE(IGDPX,KGDPX)  Simulation aggregate national accounts summary
-
-         GDPBASE_T(IGDPX,KGDPX,T)  Simulation aggregate national accounts summary
-         GDPERR                error if alt GDP definitions are not identical
-
-         GDPBASE_index_T(IGDPX,KGDPX,T) Changes in aggregate national accounts summary
-         QF_index_T(F,A,T)   Change in factor use by activity
-         QFS_index_T(F,T)     Change in level of factor supply
-         QA_index_T(A,T)     Change in level of activity
-         QD_index_T(C,T)     Change in level of domestic supply
-         QE_index_T(C,T)     Change in level of exports
-         QM_index_T(C,T)     Change in level of imports
-         QH_index_T(C,H,T)   Change in level of household demand
-         YI_index_T(H,T)     Change in level of household income
-
-         INSDNG_INCOME_T(INSDNG,*,T)    Non-government institution income
-
- ;
-*================================
-
- GDPBASE0('PRVCON','VALUE')
-   =  SUM((C,H), PQ.L(C)*QH.L(C,H))
-      + SUM((A,C,H), PXAC.L(A,C)*QHA.L(A,C,H));
-
- GDPBASE0('FIXINV','VALUE')  = SUM(C, PQ.L(C)*QINV.L(C));
- GDPBASE0('DSTOCK','VALUE')   = SUM(C, PQ.L(C)*QDST(C));
- GDPBASE0('GOVCON','VALUE')  = SUM(C, PQ.L(C)*QG.L(C));
- GDPBASE0('PROJINV','VALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF.L(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ.L(C)));
- GDPBASE0('EXPORTS','VALUE') = SUM(CE, PWE.L(CE)*EXR.L*QE.L(CE));
- GDPBASE0('IMPORTS','VALUE') = -SUM(CM, PWM.L(CM)*EXR.L*QM.L(CM));
- GDPBASE0('GDPMP','VALUE') = SUM(IGDPXX, GDPBASE0(IGDPXX,'VALUE'));
-
- GDPBASE0('ABSORP','VALUE')
-  = GDPBASE0('GDPMP','VALUE') - GDPBASE0('IMPORTS','VALUE')
-    - GDPBASE0('EXPORTS','VALUE');
-
- GDPBASE0('GDPFC2','VALUE') = SUM(A, PVA.L(A)*(1-tva(A))*QVA.L(A)) + SUM((APROJ,F),QFPROJ.L(F,APROJ)*WF.L(F));
-
- GDPBASE0('NETITAX','VALUE') =
-            SUM(A, ta(A)*PA.L(A)*QA.L(A))
-          + SUM(A, tva(A)*PVA.L(A)*QVA.L(A))
-          + SUM(CM, tm(CM)*QM.L(CM)*PWM.L(CM))*EXR.L
-          + SUM(CE, te(CE)*QE.L(CE)*PWE.L(CE))*EXR.L
-          + SUM(C, tq(C)*PQ.L(C)*QQ.L(C));
-
- GDPBASE0('GDPMP2','VALUE')
-  = GDPBASE0('GDPFC2','VALUE') + GDPBASE0('NETITAX','VALUE');
-
- GDPERR$(ABS(GDPBASE0('GDPMP2','VALUE') - GDPBASE0('GDPMP','VALUE')) GT 0.00001)
-  = 1/0;
-*  = GDPBASE0('GDPMP2','VALUE') - GDPBASE0('GDPMP','VALUE');
-
- GDPBASE0(IGDPX,'PERC-GDP')$GDPBASE0('GDPMP','VALUE')
-  = 100*GDPBASE0(IGDPX,'VALUE')/GDPBASE0('GDPMP','VALUE');
-
-
-**** Real GDP calculations / GDP at constant prices
-
- GDPBASE0('PRVCON','RVALUE')
-   =  SUM((C,H), PQ0(C)*QH.L(C,H))
-      + SUM((A,C,H), PXAC0(A,C)*QHA.L(A,C,H));
-
- GDPBASE0('FIXINV','RVALUE')  = SUM(C, PQ0(C)*QINV.L(C));
- GDPBASE0('DSTOCK','RVALUE')   = SUM(C, PQ0(C)*QDST(C));
- GDPBASE0('GOVCON','RVALUE')  = SUM(C, PQ0(C)*QG.L(C));
- GDPBASE0('PROJINV','RVALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF0(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ0(C)));
- GDPBASE0('EXPORTS','RVALUE') = SUM(CE, PWE0(CE)*EXR0*QE.L(CE));
- GDPBASE0('IMPORTS','RVALUE') = -SUM(CM, PWM0(CM)*EXR0*QM.L(CM));
- GDPBASE0('GDPCP','RVALUE') = SUM(IGDPXX, GDPBASE0(IGDPXX,'RVALUE'));
-
- GDPBASE0('ABSORP','RVALUE')
-  = GDPBASE0('GDPCP','RVALUE') - GDPBASE0('IMPORTS','RVALUE')
-    - GDPBASE0('EXPORTS','RVALUE');
-
- GDPBASE0('GDPFC2','RVALUE') = SUM(A, PVA0(A)*(1-tva(A))*QVA.L(A)) + SUM((APROJ,F),QFPROJ.L(F,APROJ)*WF0(F));
-
- GDPBASE0('NETITAX','RVALUE') =
-            SUM(A, ta(A)*PA0(A)*QA.L(A))
-          + SUM(A, tva(A)*PVA0(A)*QVA.L(A))
-          + SUM(CM, tm(CM)*QM.L(CM)*PWM0(CM))*EXR0
-          + SUM(CE, te(CE)*QE.L(CE)*PWE0(CE))*EXR0
-          + SUM(C, tq(C)*PQ0(C)*QQ.L(C));
-
-
-
-
-*==================
-
-OPTION GDPBASE0:6;
-DISPLAY GDPERR, GDPBASE0;
-
-*$stop
-
-***** scenario definition
-
-* add investment project with pre-defined cost breakdown
-
-$if not set pvalue_A $set pvalue_A 0
-$if not set interest_A $set interest_A 0.02
-$if not set repayper_A $set repayper_A 20
-$if not set loanprod_A $set loanprod_A 0
-$if not set fin_gspend_A $set fin_gspend_A 0
-$if not set fin_gsave_A $set fin_gsave_A 0
-$if not set fin_gbor_A $set fin_gbor_A 0
-$if not set fin_fbor_A $set fin_fbor_A 0
-$if not set fin_grant_A $set fin_grant_A 0
-
-$if not set pvalue_B $set pvalue_B 0
-$if not set interest_B $set interest_B 0.045
-$if not set repayper_B $set repayper_B 12
-$if not set loanprod_B $set loanprod_B 0
-$if not set fin_gspend_B $set fin_gspend_B 0
-$if not set fin_gsave_B $set fin_gsave_B 0
-$if not set fin_gbor_B $set fin_gbor_B 0
-$if not set fin_fbor_B $set fin_fbor_B 0
-$if not set fin_grant_B $set fin_grant_B 0
-
-
-$if not set flabel $set flabel BASE
-$if not set base $set base 1
-$if not set results_dir $set results_dir "results/"
-
- sPFIN(FIN,APROJ)     =       0       ;
- PVALUE("A-PROJ")  =       %pvalue_A%      ;
- PVALUE("B-PROJ")  =       %pvalue_B%      ;
-
-* REXR    =       3.5       ;
- PLVALUE(APROJ) =       PVALUE(APROJ) * REXR   ;
-
-* sPFIN("GCSPEND","A-PROJ")        =       0       ;
-* sPFIN("GSSPEND","A-PROJ")        =       0       ;
-* sPFIN("GBOR","A-PROJ")           =       0       ;
-* sPFIN("FBOR","A-PROJ")           =       0       ;
-* sPFIN("GRANT","A-PROJ")          =       0       ;
-*sPFIN(PFIN,"A-PROJ")        =       0       ;
-
-
-
- sPFIN("GCSPEND","A-PROJ")        =       %fin_gspend_A%       ;
- sPFIN("GSSPEND","A-PROJ")        =       %fin_gsave_A%       ;
- sPFIN("GBOR","A-PROJ")           =       %fin_gbor_A%       ;
- sPFIN("FBOR","A-PROJ")           =       %fin_fbor_A%       ;
- sPFIN("GRANT","A-PROJ")          =       %fin_grant_A%       ;
-
- sPFIN("GCSPEND","B-PROJ")        =       %fin_gspend_B%       ;
- sPFIN("GSSPEND","B-PROJ")        =       %fin_gsave_B%       ;
- sPFIN("GBOR","B-PROJ")           =       %fin_gbor_B%       ;
- sPFIN("FBOR","B-PROJ")           =       %fin_fbor_B%       ;
- sPFIN("GRANT","B-PROJ")          =       %fin_grant_B%       ;
-
-
-* default financing if all financing sources are set to zero
- sPFIN("GRANT",APROJ)$(not SUM(FIN,sPFIN(FIN,APROJ)))    =       1       ;
-
- PCOST(AC,APROJ)$sPCOST(AC,APROJ)    =       sPCOST(AC,APROJ)*PLVALUE(APROJ)      ;
- PFIN(FIN,APROJ)       =       sPFIN(FIN,APROJ)*PLVALUE(APROJ)      ;
-
- INVSTART(APROJ)      =       1 ;
- CONSPER(APROJ)       =       5 ;
-* OPSTART("A-PROJ")       =       2 ;
-* OPPER("A-PROJ")         =       40 ;
- GRACEPER(APROJ,FIN)  =       0 ;
-
- REPAYPER("A-PROJ",FIN)  =       %repayper_A% ;
- REPAYPER("B-PROJ",FIN)  =       %repayper_B% ;
-
-* default interest rate for government bonds
- r(APROJ,"GBOR")      =       0.025 ;
-
-
- r("A-PROJ","FBOR")      =       %interest_A% ;
- r("B-PROJ","FBOR")      =       %interest_B% ;
-
-display r;
-
-set SIMT(T)    Simulation years
- /2009*2067/
-;
-
-parameters       PFIN_AUX(FIN,APROJ)     Auxiliary variable for PFIN -- local currency
-                 PLVALUE_AUX(APROJ)      Auxiliary variable for PLVALUE -- local currency
-                 REPAYMENT_AUX(APROJ,FIN)        Auxiliary variable for REPAYMENT -- local currency
-                 PCOST_AUX(AC,APROJ)        Auxiliary variable for PCOST -- local currency
-                 PFIN_T(FIN,APROJ,T)       Project finance over time -- local currency
-                 PROJEXP_T(APROJ,T)        Project expenditure over time - direct imports deducted  -- local currency
-                 PLVALUE_T(APROJ,T)        Project investment over time -- local currency
-                 PCOST_T(AC,APROJ,T)       Project cost over over time -- local currency
-                 REPAYMENT_T(APROJ,FIN,T)  Repayment over time -- local currency
-                 LOANPROD_T(APROJ,C,T)     Production for resource-secured loan
-                 LOANPROD_AUX(APROJ,C)     Annual production for resource-secured loan
-                 KSTOCK0                 Base year capital stock
-                 KSTOCK_PREV             Capital stock from previous model run
-                 dKSTOCK                 Change in KSTOCK due to project investment
-                 aINV                    KSTOCK to investment ratio      /11.5/
-                 dep                     KSTOCK depreciation rate        /0.04/
-
-                 GSAV_T(T)               Government savings
-                 PSAV_T(T)               Total private savings
-                 FSAV_T(T)               Foreign savings
-                 TINV_T(T)               Total investment value
-                 GADJ_T(T)               Government spending adjustement
-                 EG_T(T)                 Government expenditure
-                 YG_T(T)                 Government income
-                 YTAX_T(T)               Government tax income
-                 YGPROJ_T(T)             Government factor income from project operation
-                 EH_T(H,T)               Household expenditure
-                 YI_T(INSDNG,T)          Household income
-                 YIF_T(INSDNG,F,T)            Household income by factor
-                 CPI_T(T)                Consumer price index
-                 INVSHR_T(T)
-                 TABS_T(T)               Total absorbtion over time
-                 INVVAL_T(T)             Total investment value
-                 GOVSHR_T(T)
-                 YF_T(F,T)               Factor income
-                 PA_T(A,T)               Output price of activity
-                 PE_T(C,T)               Export price in local currency
-                 PD_T(C,T)               Domestic price of domestic commodity
-                 PX_T(C,T)               Output price of domestic commodity
-                 PXAC_T(A,C,T)           Domestic price of commodity
-                 PQ_T(C,T)               Consumer price of commodity
-                 QA_T(A,T)               Activity output level
-                 QD_T(C,T)               Domestic supply of commodity
-                 QX_T(C,T)               Domestic production of commodity
-                 QM_T(C,T)               Imported quantity
-                 QE_T(C,T)               Exported quantity
-                 QINV_T(C,T)             Investment demand of commodity
-                 QINVTOT_T(T)            Toatl investment demand
-                 WF_T(F,T)               Factor rent
-                 EXR_T(T)                Exchange rate local currency to international currency
-                 WALRAS_T(T)             Walras - savings-investment imbalance
-                 QG_T(C,T)               Government demand of commodity
-                 QH_T(C,H,T)             Household demand of commodity
-                 MPS_T(INS,T)
-                 IADJ_T(T)               Investment spending adjustment
-                 QFS_T(F,T)              Factor supply
-                 QF_T(F,AC,T)            Factor demand by activity
-                 QINT_T(C,AC,T)          Intermediate demand by activity
-                 QFSPROJ_T(F,APROJ,T)    Factor demand by project
-                 pop_delta(T)            Active population change
-
-;
-
-set INVCAP(FCAP)       / CAP-AGR, CAP-OTH        /;
-alias (INVCAP,INVCAPP)   ;
-
-parameter        ror(INVCAP)     relative rate of return of INVCAP
-                 delta_qfs(INVCAP)       change in capital stock of INVCAP
-                 rebase_qfs(INVCAP)       rebasing changes in capital stock of INVCAP
-                 delta_stock     change in total general capital stock to be allocated across INVCAP     ;
-
-
-
-$gdxin ghana_population.gdx
-$load pop_delta
-
-display pop_delta;
-
- REPAYMENT(APROJ,FIN)$(PFIN(FIN,APROJ) and r(APROJ,FIN))
-         =       ((1+r(APROJ,FIN))**GRACEPER(APROJ,FIN)*PFIN(FIN,APROJ)) * r(APROJ,FIN) /
-                 (1-(1+r(APROJ,FIN))**(-REPAYPER(APROJ,FIN)))    ;
-
-*> cocoa exports 34000tons above 835466tons prod in 2013. SAM 2013 for coco 4518.29 GHS => 5400 GHS/t, or 183.64M GHS exports at constant prices / scaled down to 18.364 to match SAM
-
- LOANPROD_AUX("A-PROJ","C-AGR")   = %loanprod_A%*REXR        ;
-
-*> question: negotiated production export price reflective of market price?
- LOANPRODPRICE("A-PROJ","C-AGR")  = 1             ;
-
-
- PFIN_AUX(FIN,APROJ)     =       PFIN(FIN,APROJ) ;
- PLVALUE_AUX(APROJ)      =       PLVALUE(APROJ)  ;
- REPAYMENT_AUX(APROJ,FIN)=       REPAYMENT(APROJ,FIN) ;
- PCOST_AUX(AC,APROJ)     =       PCOST(AC,APROJ)     ;
-* REPAYMENT(APROJ,FIN)    =       0       ;
- PFIN(FIN,APROJ) =       0       ;
- PLVALUE(APROJ)  =       0       ;
- REPAYMENT(APROJ,FIN)=   0       ;
- PCOST(AC,APROJ) =       0       ;
-
- KSTOCK0         =       aINV*SUM(C,QINV0(C))      ;
- KSTOCK_PREV     =       KSTOCK0 ;
-
-*> reading operation performance values
-
-set run /RUN1*RUN50/ ;
-
-parameter hydro_output(*,T,run)
-          delta_hydro_output(*,T,run)  ;
-$gdxin hydro_output.gdx
-$load hydro_output=h_output, delta_hydro_output=delta_h_output
-
-display hydro_output, delta_hydro_output ;
-
-*$stop
-loop(SIMT,
-
- PFIN(FIN,APROJ) =       0       ;
- PLVALUE(APROJ)  =       0       ;
- REPAYMENT(APROJ,FIN)=   0       ;
- LOANPROD(APROJ,C)     =       0       ;
- PCOST(AC,APROJ) =       0       ;
-
- PLVALUE(APROJ)$(ord(SIMT)>=INVSTART(APROJ) AND (ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ))))     =       PLVALUE_AUX(APROJ)/CONSPER(APROJ)      ;
- PFIN(FIN,APROJ)$(ord(SIMT)>=INVSTART(APROJ) AND (ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ))))    =       PFIN_AUX(FIN,APROJ)/CONSPER(APROJ)      ;
- PCOST(AC,APROJ)$(ord(SIMT)>=INVSTART(APROJ) AND (ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ))))    =       PCOST_AUX(AC,APROJ)/CONSPER(APROJ)      ;
-
-* LOANPROD(APROJ,C)$(ord(SIMT)>=(INVSTART(APROJ)+CONSPER(APROJ)+GRACEPER(APROJ,"FBOR")) AND(ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ)+GRACEPER(APROJ,"FBOR")+REPAYPER(APROJ,"FBOR"))))    =       LOANPROD_AUX(APROJ,C)      ;
-* exports started in 2010
- LOANPROD(APROJ,C)$(ord(SIMT)> 1 AND(ord(SIMT)<(1+REPAYPER(APROJ,"FBOR"))))    =       LOANPROD_AUX(APROJ,C)      ;
- LOANPROD(APROJ,C)$(NOT PFIN_AUX("FBOR",APROJ)) =        0;
-
- REPAYMENT(APROJ, FIN)$(ord(SIMT)>=(INVSTART(APROJ)+CONSPER(APROJ)+GRACEPER(APROJ,FIN)) AND(ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ)+GRACEPER(APROJ,FIN)+REPAYPER(APROJ,FIN))))    =       REPAYMENT_AUX(APROJ,FIN)      ;
-
-*** deducting loan collateral exports
- REPAYMENT(APROJ, "FBOR")$PFIN_AUX("FBOR",APROJ) = REPAYMENT(APROJ, "FBOR") ;
-* - SUM(C,LOANPROD(APROJ,C)*LOANPRODPRICE(APROJ,C)) ;
-display repayment;
-
-if(%base%=0,
-$if not set climate $set climate "run1"
-
-*         QFSPROJ.FX("CAP-HY","A-PROJ")   = QFS0("CAP-HY")*(0 + 0.249$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
-*         QFS.FX("CAP-HY")                = QFS0("CAP-HY")*(1 + 0.044$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
-
-
-         QFSPROJ.FX("CAP-HY","A-PROJ") = QFS0("CAP-HY")*(0 + delta_hydro_output("bui",SIMT,"%climate%")*delta_hydro_output("akosombo_base",SIMT,"%climate%")  )     ;
-         QFS.FX("CAP-HY") = QFS0("CAP-HY")*(0 + delta_hydro_output("akosombo",SIMT,"%climate%")*delta_hydro_output("akosombo_base",SIMT,"%climate%")  )     ;
-
-        QFSPROJ.FX("CAP-HY","A-PROJ")$(ORD(SIMT)>8)   = QFS0("CAP-HY")*(0 + 0.249$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
-        QFS.FX("CAP-HY")$(ORD(SIMT)>8)                = QFS0("CAP-HY")*(1 + 0.044$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
-
-display QFSPROJ.L, QFS.L ;
- );
-
-if(%base%=1,
-$if not set climate $set climate "run1"
-
-         QFS.FX("CAP-HY")$delta_hydro_output("akosombo_base",SIMT,"%climate%")  = QFS0("CAP-HY")*(0 + delta_hydro_output("akosombo_base",SIMT,"%climate%") )     ;
-         QFS.FX("CAP-HY")$(ORD(SIMT)>8)  = 1.0084*QFS0("CAP-HY")     ;
-
-display QFSPROJ.L, QFS.L ;
- );
-
- PLVALUE_T(APROJ,SIMT)   =       PLVALUE(APROJ)  ;
- PFIN_T(FIN,APROJ,SIMT)  =       PFIN(FIN,APROJ) ;
- PCOST_T(AC,APROJ,SIMT)  =       PCOST(AC,APROJ) ;
- LOANPROD_T(APROJ,C,SIMT)      =       LOANPROD(APROJ,C) ;
- REPAYMENT_T(APROJ,FIN,SIMT) =   REPAYMENT(APROJ,FIN) ;
-
-* SOLVE STANDCGE USING MCP ;
- SOLVE ENERGYCGE USING MCP ;
-
-*** post-simulation calculations
-
-                 GSAV_T(SIMT)       = GSAV.L ;
-                 PSAV_T(SIMT)       = PSAV.L ;
-                 FSAV_T(SIMT)       = FSAV.L ;
-                 TINV_T(SIMT)       = TINV.L ;
-                 GADJ_T(SIMT)       = GADJ.L ;
-                 EG_T(SIMT)         = EG.L ;
-                 YG_T(SIMT)         = YG.L ;
-                 YTAX_T(SIMT)       = YTAX.L     ;
-                 YGPROJ_T(SIMT)     = YGPROJ.L ;
-                 EH_T(H,SIMT)       = EH.L(H) ;
-                 YI_T(INSDNG,SIMT)       = YI.L(INSDNG) ;
-                 YIF_T(INSDNG,F,SIMT)    = YIF.L(INSDNG,F) ;
-                 CPI_T(SIMT)        = CPI.L ;
-                 INVSHR_T(SIMT)     = INVSHR.L ;
-                 GOVSHR_T(SIMT)     = GOVSHR.L ;
-                 YF_T(F,SIMT)       = YF.L(F) ;
-                 PA_T(A,SIMT)       = PA.L(A) ;
-                 QA_T(A,SIMT)       = QA.L(A) ;
-                 QX_T(C,SIMT)       = QX.L(C) ;
-                 QD_T(C,SIMT)       = QD.L(C) ;
-                 PQ_T(C,SIMT)       = PQ.L(C) ;
-                 QINV_T(C,SIMT)     = QINV.L(C) ;
-                 QINVTOT_T(SIMT)    = QINVTOT.L ;
-                 WF_T(F,SIMT)       = WF.L(F) ;
-                 EXR_T(SIMT)        = EXR.L ;
-                 WALRAS_T(SIMT)     = WALRAS.L   ;
-                 QG_T(C,SIMT)       = QG.L(C) ;
-                 QH_T(C,H,SIMT)     = QH.L(C,H) ;
-                 MPS_T(INS,SIMT)    = MPS.L(INS) ;
-                 IADJ_T(SIMT)       = IADJ.L ;
-                 QFS_T(F,SIMT)      = QFS.L(F) ;
-                 QM_T(C,SIMT)       = QM.L(C)  ;
-                 QE_T(C,SIMT)       = QE.L(C)  ;
-                 PE_T(C,SIMT)       = PE.L(C) ;
-                 PD_T(C,SIMT)       = PDD.L(C) ;
-                 PX_T(C,SIMT)       = PX.L(C) ;
-                 PXAC_T(A,C,SIMT)   = PXAC.L(A,C)  ;
-                 QFSPROJ_T(F,APROJ,SIMT) = QFSPROJ.L(F,APROJ) ;
-                 QF_T(F,A,SIMT)     = QF.L(F,A)  ;
-                 QF_T(F,APROJ,SIMT) = QFPROJ.L(F,APROJ) ;
-                 QINT_T(C,A,SIMT)      = QINT.L(C,A) ;
-                 QINT_T(C,APROJ,SIMT)      = QINTPROJ.L(C,APROJ) ;
-
-
-                 INSDNG_INCOME_T(INSDNG,F,SIMT)      =       YIF.L(INSDNG,F) ;
-                 INSDNG_INCOME_T(INSDNG,INSDNGP,SIMT)      =       TRII.L(INSDNG,INSDNGP) ;
-                 INSDNG_INCOME_T(INSDNG,'GOV',SIMT)       =       trnsfr(INSDNG,'GOV')*CPI.L;
-                 INSDNG_INCOME_T(INSDNG,'ROW',SIMT)       =       trnsfr(INSDNG,'ROW')*EXR.L;
-                 INSDNG_INCOME_T(INSDNG,'TOTAL',SIMT)     =       SUM(F,INSDNG_INCOME_T(INSDNG,F,SIMT) ) + SUM(INSDNGP,INSDNG_INCOME_T(INSDNG,INSDNGP,SIMT)) +  INSDNG_INCOME_T(INSDNG,'GOV',SIMT) + INSDNG_INCOME_T(INSDNG,'ROW',SIMT) ;
-
-
-* QFS.FX("CAPITAL") =       (SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) /KSTOCK_PREV * QFS.L("CAPITAL") ;
-
-
-ror(INVCAP) = WF.L(INVCAP) / (SUM(INVCAPP, QFS.L(INVCAPP) * WF.L(INVCAPP)) /SUM(INVCAPP, QFS.L(INVCAPP)))       ;
-delta_stock = (SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) /KSTOCK_PREV    ;
-delta_qfs(INVCAP)  = delta_stock * ror(INVCAP)**0.5 * QFS.L(INVCAP)       ;
-
-display ror;
-
- rebase_qfs(INVCAP)       =      1       ;
-*(SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) /KSTOCK_PREV * QFS.L(INVCAP)
-
- QFS.FX(INVCAP)  =       delta_qfs(INVCAP) * rebase_qfs(INVCAP)  ;
-
-
-* QFS.FX("CAP-AGR") =       (SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) /KSTOCK_PREV * QFS.L("CAP-AGR") ;
-* QFS.FX("CAP-OTH") =       (SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) /KSTOCK_PREV * QFS.L("CAP-OTH") ;
- QFS0(FLAB)      = pop_delta(SIMT) * QFS0(FLAB)     ;
-
-* DMPS.FX = 1 - (1.002)**(ord(SIMT)-1);
-
-display DMPS.L   ;
-
- QFS0("LAND")  = QFS0("LAND")*1.02  ;
-* FSAV.FX         = 1.02 * FSAV.L         ;
-
-* dKSTOCK = (SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV) / (SUM(C,QINV0(C)) + (1-dep)*KSTOCK0) ;
-* QFS.FX("CAPITAL") = QFS0("CAPITAL")*dKSTOCK ;
-* QFS0("CAPITAL")   = QFS.L("CAPITAL") ;
- KSTOCK_PREV = SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV ;
-
-
- GDPBASE('PRVCON','VALUE')
-          =  SUM((C,H), PQ.L(C)*QH.L(C,H))
-             + SUM((A,C,H), PXAC.L(A,C)*QHA.L(A,C,H));
-
- GDPBASE('FIXINV','VALUE')  = SUM(C, PQ.L(C)*QINV.L(C));
- GDPBASE('DSTOCK','VALUE')   = SUM(C, PQ.L(C)*QDST(C));
- GDPBASE('GOVCON','VALUE')  = SUM(C, PQ.L(C)*QG.L(C));
- GDPBASE('PROJINV','VALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF.L(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ.L(C)));
- GDPBASE('EXPORTS','VALUE') = SUM(CE, PWE.L(CE)*EXR.L*QE.L(CE));
- GDPBASE('IMPORTS','VALUE') = -SUM(CM, PWM.L(CM)*EXR.L*QM.L(CM));
- GDPBASE('GDPMP','VALUE') = SUM(IGDPXX, GDPBASE(IGDPXX,'VALUE'));
-
- GDPBASE('ABSORP','VALUE')
- = GDPBASE('GDPMP','VALUE') - GDPBASE('IMPORTS','VALUE')
- - GDPBASE('EXPORTS','VALUE');
-
- GDPBASE('GDPFC2','VALUE') = SUM(A, PVA.L(A)*(1-tva(A))*QVA.L(A));
-
- GDPBASE('NETITAX','VALUE') =
-                   SUM(A, ta(A)*PA.L(A)*QA.L(A))
-                 + SUM(A, tva(A)*PVA.L(A)*QVA.L(A))
-                 + SUM(CM, tm(CM)*QM.L(CM)*PWM.L(CM))*EXR.L
-                 + SUM(CE, te(CE)*QE.L(CE)*PWE.L(CE))*EXR.L
-                 + SUM(C, tq(C)*PQ.L(C)*QQ.L(C));
-
- GDPBASE('GDPMP2','VALUE')
-         = GDPBASE('GDPFC2','VALUE') + GDPBASE('NETITAX','VALUE');
-
-* GDPERR$(ABS(GDPBASE('GDPMP2','VALUE') - GDPBASE('GDPMP','VALUE')) GT 0.00001)
-*  = 1/0;
-
-* GDPBASE('GDPMP2','VALUE') = 0;
-
-
- GDPBASE(IGDPX,'PERC-GDP')$GDPBASE('GDPMP','VALUE')
-         = 100*GDPBASE(IGDPX,'VALUE')/GDPBASE('GDPMP','VALUE');
-
-
-**** Real GDP calculations / GDP at constant prices
-
- GDPBASE('PRVCON','RVALUE')
-   =  SUM((C,H), PQ0(C)*QH.L(C,H))
-      + SUM((A,C,H), PXAC0(A,C)*QHA.L(A,C,H));
-
- GDPBASE('FIXINV','RVALUE')  = SUM(C, PQ0(C)*QINV.L(C));
- GDPBASE('DSTOCK','RVALUE')   = SUM(C, PQ0(C)*QDST(C));
- GDPBASE('GOVCON','RVALUE')  = SUM(C, PQ0(C)*QG.L(C));
- GDPBASE('PROJINV','RVALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF0(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ0(C)));
- GDPBASE('EXPORTS','RVALUE') = SUM(CE, PWE0(CE)*EXR0*QE.L(CE));
- GDPBASE('IMPORTS','RVALUE') = -SUM(CM, PWM0(CM)*EXR0*QM.L(CM));
- GDPBASE('GDPCP','RVALUE') = SUM(IGDPXX, GDPBASE(IGDPXX,'RVALUE'));
-
- GDPBASE('ABSORP','RVALUE')
-  = GDPBASE('GDPCP','RVALUE') - GDPBASE('IMPORTS','RVALUE')
-    - GDPBASE('EXPORTS','RVALUE');
-
- GDPBASE('GDPFC2','RVALUE') = SUM(A, PVA0(A)*(1-tva(A))*QVA.L(A)) + SUM((APROJ,F),QFPROJ.L(F,APROJ)*WF0(F));
-
- GDPBASE('NETITAX','RVALUE') =
-            SUM(A, ta(A)*PA0(A)*QA.L(A))
-          + SUM(A, tva(A)*PVA0(A)*QVA.L(A))
-          + SUM(CM, tm(CM)*QM.L(CM)*PWM0(CM))*EXR0
-          + SUM(CE, te(CE)*QE.L(CE)*PWE0(CE))*EXR0
-          + SUM(C, tq(C)*PQ0(C)*QQ.L(C));
-
- GDPBASE_T(IGDPX,KGDPX,SIMT)  = GDPBASE(IGDPX,KGDPX)     ;
-
-*==================
-
- OPTION GDPBASE:6;
- DISPLAY GDPERR, GDPBASE;
-
-*** post-simulation reporting
-
- PROJEXP_T(APROJ,SIMT)   =       PROJEXP.L(APROJ)        ;
-
-
-*** post-simulation index calculation
-
- QA_index_T(A,SIMT)$QA0(A)       = (QA.L(A) / QA0(A) - 1) * 100       ;
- QD_index_T(C,SIMT)$QD0(C)       = (QD.L(C) / QD0(C) - 1) * 100       ;
- QE_index_T(C,SIMT)$QE0(C)       = (QE.L(C) / QE0(C) - 1) * 100       ;
- QM_index_T(C,SIMT)$QM0(C)       = (QM.L(C) / QM0(C) - 1) * 100       ;
- QH_index_T(C,H,SIMT)$QH0(C,H)       = (QH.L(C,H) / QH0(C,H) - 1) * 100       ;
- QF_index_T(F,A,SIMT)$QF0(F,A)   = (QF.L(F,A) / QF0(F,A) - 1) * 100       ;
- QFS_index_T(F,SIMT)$QFS0(F)     = (QFS.L(F) / QFS0(F) - 1) * 100       ;
- GDPBASE_index_T(IGDPX,KGDPX,SIMT)$GDPBASE0(IGDPX,KGDPX) =  (GDPBASE(IGDPX,KGDPX) / GDPBASE0(IGDPX,KGDPX) - 1)*100  ;
- YI_index_T(H,SIMT)$YI0(H)        = (YI.L(H) / YI0(H) - 1) * 100       ;
-
-) ;
-
-
-$if not set climate $set climate ""
-
-
- execute_unload "%results_dir%bui_results_%flabel%_%climate%.gdx" SAM, r, C,A,F,H,AC,INSDNG,GDPBASE_T, QA_index_T, QD_index_T, QE_index_T, QM_index_T, QF_index_T, GDPBASE_index_T, QFS_index_T, QH_index_T, PLVALUE_T, PROJEXP_T, PCOST_T, PFIN_T, REPAYMENT_T, LOANPROD_T, REPAYMENT_AUX, GSAV_T, PSAV_T, FSAV_T, TINV_T, EG_T, YG_T, YTAX_T, YGPROJ_T, EH_T, gammam, betam, gammah, betah YI_T, YIF_T, CPI_T, INVSHR_T, GOVSHR_T, YF_T, PA_T, QA_T, QX_T, QD_T, QM_T, QE_T, PQ_T, PE_T, PD_T, PX_T, PXAC_T, QINV_T, QINVTOT_T, WF_T, EXR_T, WALRAS_T, QG_T, PFIN_T, MPS_T, IADJ_T, GADJ_T, QF_T, QFS_T, QFSPROJ_T, QINT_T, YI_index_T, INSDNG_INCOME_T
-
-
-*14. OPTIONAL NLP MODEL DEFINITION AND SOLUTION STATEMENT ###########
-
-$ontext
-Define a model that can be solved using a nonlinear programming (NLP)
-solver. The model includes the equation OBJEQ which defines the
-variable WALRASSQR, which is the square of the Walras' Law variable,
-which must be zero in equilibrium.
-$offtext
-
- MODEL NLPCGE  standard CGE model for NLP solver
- /
-*Price block (10)
- PMDEF
- PEDEF
- PQDEF
- PXDEF
- PDDDEF
- PADEF
- PINTADEF
- PVADEF
- CPIDEF
- DPIDEF
-
-*Production and trade block (17)
- CESAGGPRD
- CESAGGFOC
- LEOAGGINT
- LEOAGGVA
- CESVAPRD
- CESVAFOC
- INTDEM
- COMPRDFN
- OUTAGGFN
- OUTAGGFOC
- CET
- CET2
- ESUPPLY
- ARMINGTON
- COSTMIN
- ARMINGTON2
- QTDEM
-
-*Institution block (12)
- YFDEF
- YIFDEF
- YIDEF
- EHDEF
- TRIIDEF
- HMDEM
- HADEM
- EGDEF
- YGDEF
- GOVDEM
- GOVBAL
- INVDEM
-
-*System-constraint block (9)
- FACEQUIL
- COMEQUIL
- CURACCBAL
- TINSDEF
- MPSDEF
- SAVINVBAL
- TABSEQ
- INVABEQ
- GDABEQ
- OBJEQ
- /
- ;
-
- NLPCGE.HOLDFIXED   = 1 ;
- NLPCGE.TOLINFREP   = .0001 ;
-
-*SOLVE NLPCGE MINIMIZING WALRASSQR USING NLP ;
-
-
-
-*15. SOLUTION REPORTS ###############################################
-
-*Optional include file defining report parameters summarizing economic
-*data for the base year.
-
-*$INCLUDE REPBASE.INC
-
-
-$STITLE Input file: MOD101.GMS. Standard CGE modeling system, Version 1.01
-
- STANDCGE.MODELSTAT = 0;
- STANDCGE.SOLVESTAT = 0;
- STANDCGE.NUMREDEF  = 0;
-
- NLPCGE.MODELSTAT = 0;
- NLPCGE.SOLVESTAT = 0;
- NLPCGE.NUMREDEF  = 0;
-
-
-
-*#*#*#*#*# THE END OF MOD101.GMS #*#*#*#*
+*#*#*#*#*# THE END OF INVESTCGE.GMS #*#*#*#*

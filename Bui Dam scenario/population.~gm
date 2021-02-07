@@ -1,3 +1,0 @@
-parameter population(*) Population read by year
-
-$call gdxxrw "Ghana population.xlsx" o=ghana_population par=pop_delta Rng='population_15_65!A2:B97' rdim=1

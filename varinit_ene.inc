@@ -45,9 +45,6 @@ $STITLE Input file: VARINIT.INC. Initialization of variables. Standard CGE model
 
   QINV.L(C)       = QINV0(C);
   QINVTOT.L       = QINVTOT0     ;
-  KSTOCKP.L       = KSTOCKP0      ;
-  KSTOCK.L        = KSTOCK0      ;
-  CAPG.L          = CAPG0  ;
   QM.L(C)         = QM0(C);
   QQ.L(C)         = QQ0(C);
   QT.L(C)         = QT0(C);
