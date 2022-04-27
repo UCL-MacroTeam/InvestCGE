@@ -4,17 +4,55 @@
 ***** scenario definition
 
 
-set SIMT(T)    Simulation years
- /2009*2067/
+set SIMT(T)    Simulation years /2009*2067/
+    T2(T)      Simulation years without first year /2010*2067/
 ;
 
 set INVCAP(FCAP) Investment capital categories
-/
-         CAP-AGR Agricultural capital
-         CAP-OTH General capital
-/;
+    /
+    CAP-AGR Agricultural capital
+    CAP-OTH General capital
+    /
+;
 
 alias (INVCAP,INVCAPP)   ;
+
+
+SETS
+
+ IGDPX  Items for GDP and national accounts
+  /
+  ABSORP   absorption
+  PRVCON   private consumption
+  FIXINV   fixed investment
+  DSTOCK   stock change
+  GOVCON   government consumption
+  PROJINV  project investment
+  EXPORTS  exports
+  IMPORTS  imports
+  GDPCP    GDP at constant prices (real GDP)
+  GDPMP    GDP at market prices (alt. 1: spending)
+  GDPMP2   GDP at market prices (alt. 2: value-added)
+  NETITAX  net indirect taxes
+  GDPFC2   GDP at factor cost
+  /
+
+ IGDPXX(IGDPX)  Items for GDPMP summation
+  /
+  PRVCON   private consumption
+  FIXINV   fixed investment
+  PROJINV  project investment
+  DSTOCK   stock change
+  GOVCON   government consumption
+  EXPORTS  exports
+  IMPORTS  imports
+  /
+
+ KGDPX  second index in GDP tables
+ /
+ VALUE, RVALUE, PERC-GDP, PERC-TOT
+ /
+;
 
 parameters       PFIN_TOT(FIN,APROJ)             Auxiliary variable for PFIN -- local currency
                  PLVALUE_TOT(APROJ)              Auxiliary variable for PLVALUE -- local currency
@@ -74,12 +112,24 @@ parameters       PFIN_TOT(FIN,APROJ)             Auxiliary variable for PFIN -- 
                  QFSPROJ_T(F,APROJ,T)            Factor supply by project
                  INSDNG_INCOME_T(INSDNG,*,T)     Private institutions income by source
                  pop_delta(T)                    Active population change
-                 ror(INVCAP)     relative rate of return of INVCAP
-                 delta_qfs(INVCAP)       change in capital stock of INVCAP
-*                 rebase_qfs(INVCAP)       rebasing changes in capital stock of INVCAP
-                 rebase_qfs       rebasing changes in capital stock of INVCAP
-                 delta_stock     change in total general capital stock to be allocated across INVCAP
-;
+                 ror(INVCAP)                     relative rate of return of INVCAP
+                 delta_qfs(INVCAP)               change in capital stock of INVCAP
+                 rebase_qfs                      rebasing changes in capital stock of INVCAP
+                 delta_stock                     change in total general capital stock to be allocated across INVCAP
+
+                 GDPBASE(IGDPX,KGDPX)            Simulation aggregate national accounts summary
+                 GDPBASE_T(IGDPX,KGDPX,T)        Simulation aggregate national accounts summary
+                 GDPERR                          error if alt GDP definitions are not identical
+                 GDPBASE_index_T(IGDPX,KGDPX,T)  Changes in aggregate national accounts summary
+                 QF_index_T(F,A,T)               Change in factor use by activity
+                 QFS_index_T(F,T)                Change in level of factor supply
+                 QA_index_T(A,T)                 Change in level of activity
+                 QD_index_T(C,T)                 Change in level of domestic supply
+                 QE_index_T(C,T)                 Change in level of exports
+                 QM_index_T(C,T)                 Change in level of imports
+                 QH_index_T(C,H,T)               Change in level of household demand
+                 YI_index_T(H,T)                 Change in level of household income
+ ;;
 
 
 * add investment project with pre-defined cost breakdown
@@ -187,15 +237,56 @@ parameter hydro_output(*,T,run)
 $gdxin hydro_output.gdx
 $load hydro_output=h_output, delta_hydro_output=delta_h_output
 
+parameter deltava_T(F,A,T)        factor share parameter in VA-nest
+          alphava_T(A,T)          VA-nest scale parameter
+          deltaa_T(A,T)           VA share parameter in top production nest
+          alphaa_T(A,T)           top production nest scale parameter
+          delta2va_T(F,A,T)       factor share parameter in VA-nest (energy version)
+          alpha2va_T(A,T)         VA-nest scale parameter
+          delta2ene_T(CENE,A,T)   Energy intermediate share in energy-nest
+          alpha2ene_T(A,T)        Energy-nest scale parameter
+          deltavae_va_T(A,T)      VA share parameter in VAE-nest
+          deltavae_ene_T(A,T)     Energy share in VAE-nest
+          alphavae_T(A,T)         VAE-nest scale parameter
+          deltat_T(C,T)           Export CET share parmater
+          alphat_T(C,T)           Export CET scale parameter
+          deltaq_T(C,T)           Armington imports share parameter
+          alphaq_T(C,T)           Armington nest scale parameter
+          betam_T(C,H,T)          Household supranumerary budget share - marketed commodities
+          betah_T(A,C,H,T)        Household supranumerary budget share - subsistence commodities
+          gammam_T(C,H,T)         Household subsistence consumption - marketed commodities
+          gammah_T(A,C,H,T)       Household subsistence consumption - subsistence commodities
+;
+
+ deltava_T(F,A,T)     =       0  ;
+ alphava_T(A,T)       =       0  ;
+ deltaa_T(A,T)        =       0  ;
+ alphaa_T(A,T)        =       0  ;
+ delta2va_T(F,A,T)    =       0  ;
+ alpha2va_T(A,T)      =       0  ;
+ delta2ene_T(CENE,A,T)=       0  ;
+ alpha2ene_T(A,T)     =       0  ;
+ deltavae_va_T(A,T)   =       0  ;
+ deltavae_ene_T(A,T)  =       0  ;
+ alphavae_T(A,T)      =       0  ;
+ deltat_T(C,T)        =       0  ;
+ alphat_T(C,T)        =       0  ;
+ deltaq_T(C,T)        =       0  ;
+ alphaq_T(C,T)        =       0  ;
+ betam_T(C,H,T)       =       0  ;
+ betah_T(A,C,H,T)     =       0  ;
+ gammam_T(C,H,T)      =       0  ;
+ gammah_T(A,C,H,T)    =       0  ;
+
 
 * starting multi-annual simulations
 loop(SIMT,
 
- PFIN(FIN,APROJ) =       0       ;
- PLVALUE(APROJ)  =       0       ;
- REPAYMENT(APROJ,FIN)=   0       ;
- LOANPROD(APROJ,C)     =       0       ;
- PCOST(AC,APROJ) =       0       ;
+ PFIN(FIN,APROJ)         =       0       ;
+ PLVALUE(APROJ)          =       0       ;
+ REPAYMENT(APROJ,FIN)    =       0       ;
+ LOANPROD(APROJ,C)       =       0       ;
+ PCOST(AC,APROJ)         =       0       ;
 
  PLVALUE(APROJ)$(ord(SIMT)>=INVSTART(APROJ) AND (ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ))))     =       PLVALUE_TOT(APROJ)/CONSPER(APROJ)      ;
  PFIN(FIN,APROJ)$(ord(SIMT)>=INVSTART(APROJ) AND (ord(SIMT)<(INVSTART(APROJ)+CONSPER(APROJ))))    =       PFIN_TOT(FIN,APROJ)/CONSPER(APROJ)      ;
@@ -216,9 +307,9 @@ $if not set climate $set climate "run1"
          QFS.FX("CAP-HY") = QFS0("CAP-HY")*(0 + delta_hydro_output("akosombo",SIMT,"%climate%")*delta_hydro_output("akosombo_base",SIMT,"%climate%")  )     ;
 
 * un-comment below for average Bui hydropower output based on hydrological sequences
-*        QFSPROJ.FX("CAP-HY","A-PROJ")$(ORD(SIMT)>8)   = QFS0("CAP-HY")*(0 + 0.249$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
+        QFSPROJ.FX("CAP-HY","A-PROJ")$(ORD(SIMT)>8)   = QFS0("CAP-HY")*(0 + 0.249$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
 * un-comment below for average Akosombo hydropower output based on hydrological sequences
-*        QFS.FX("CAP-HY")$(ORD(SIMT)>8)                = QFS0("CAP-HY")*(1 + 0.044$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
+        QFS.FX("CAP-HY")$(ORD(SIMT)>8)                = QFS0("CAP-HY")*(1 + 0.044$( (ord(SIMT)>=(INVSTART("A-PROJ")+CONSPER("A-PROJ"))) ) )     ;
 
  );
 
@@ -231,6 +322,13 @@ $if not set climate $set climate "run1"
 *    QFS.FX("CAP-HY")$(ORD(SIMT)>8)  = 1.0084*QFS0("CAP-HY")     ;
 
  );
+
+* run dynamic recalibration from second year onwards
+if(T2(SIMT),
+
+$include dynamic_recalibration.inc
+
+);
 
 
  SOLVE INVESTCGE USING MCP ;
@@ -311,11 +409,92 @@ $if not set climate $set climate "run1"
 * calculating new capital stock for the next time step
  KSTOCK_PREV     =       SUM(C,QINV.L(C)) + (1-dep)*KSTOCK_PREV ;
 
+ GDPBASE('PRVCON','VALUE')
+          =  SUM((C,H), PQ.L(C)*QH.L(C,H))
+             + SUM((A,C,H), PXAC.L(A,C)*QHA.L(A,C,H));
+
+ GDPBASE('FIXINV','VALUE')  = SUM(C, PQ.L(C)*QINV.L(C));
+ GDPBASE('DSTOCK','VALUE')   = SUM(C, PQ.L(C)*QDST(C));
+ GDPBASE('GOVCON','VALUE')  = SUM(C, PQ.L(C)*QG.L(C));
+ GDPBASE('PROJINV','VALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF.L(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ.L(C)));
+ GDPBASE('EXPORTS','VALUE') = SUM(CE, PWE.L(CE)*EXR.L*QE.L(CE));
+ GDPBASE('IMPORTS','VALUE') = -SUM(CM, PWM.L(CM)*EXR.L*QM.L(CM));
+ GDPBASE('GDPMP','VALUE') = SUM(IGDPXX, GDPBASE(IGDPXX,'VALUE'));
+
+ GDPBASE('ABSORP','VALUE')
+ = GDPBASE('GDPMP','VALUE') - GDPBASE('IMPORTS','VALUE')
+ - GDPBASE('EXPORTS','VALUE');
+
+ GDPBASE('GDPFC2','VALUE') = SUM(A, PVA.L(A)*(1-tva(A))*QVA.L(A));
+
+ GDPBASE('NETITAX','VALUE') =
+                   SUM(A, ta(A)*PA.L(A)*QA.L(A))
+                 + SUM(A, tva(A)*PVA.L(A)*QVA.L(A))
+                 + SUM(CM, tm(CM)*QM.L(CM)*PWM.L(CM))*EXR.L
+                 + SUM(CE, te(CE)*QE.L(CE)*PWE.L(CE))*EXR.L
+                 + SUM(C, tq(C)*PQ.L(C)*QQ.L(C));
+
+ GDPBASE('GDPMP2','VALUE')
+         = GDPBASE('GDPFC2','VALUE') + GDPBASE('NETITAX','VALUE');
+
+* GDPERR$(ABS(GDPBASE('GDPMP2','VALUE') - GDPBASE('GDPMP','VALUE')) GT 0.00001)
+*  = 1/0;
+
+* GDPBASE('GDPMP2','VALUE') = 0;
+
+
+ GDPBASE(IGDPX,'PERC-GDP')$GDPBASE('GDPMP','VALUE')
+         = 100*GDPBASE(IGDPX,'VALUE')/GDPBASE('GDPMP','VALUE');
+
+
+**** Real GDP calculations / GDP at constant prices
+
+ GDPBASE('PRVCON','RVALUE')
+   =  SUM((C,H), PQ0(C)*QH.L(C,H))
+      + SUM((A,C,H), PXAC0(A,C)*QHA.L(A,C,H));
+
+ GDPBASE('FIXINV','RVALUE')  = SUM(C, PQ0(C)*QINV.L(C));
+ GDPBASE('DSTOCK','RVALUE')   = SUM(C, PQ0(C)*QDST(C));
+ GDPBASE('GOVCON','RVALUE')  = SUM(C, PQ0(C)*QG.L(C));
+ GDPBASE('PROJINV','RVALUE')  = SUM(APROJ, SUM(F,QFPROJ.L(F,APROJ)*WF0(F)) + SUM(C,QINTPROJ.L(C,APROJ)*PQ0(C)));
+ GDPBASE('EXPORTS','RVALUE') = SUM(CE, PWE0(CE)*EXR0*QE.L(CE));
+ GDPBASE('IMPORTS','RVALUE') = -SUM(CM, PWM0(CM)*EXR0*QM.L(CM));
+ GDPBASE('GDPCP','RVALUE') = SUM(IGDPXX, GDPBASE(IGDPXX,'RVALUE'));
+
+ GDPBASE('ABSORP','RVALUE')
+  = GDPBASE('GDPCP','RVALUE') - GDPBASE('IMPORTS','RVALUE')
+    - GDPBASE('EXPORTS','RVALUE');
+
+ GDPBASE('GDPFC2','RVALUE') = SUM(A, PVA0(A)*(1-tva(A))*QVA.L(A)) + SUM((APROJ,F),QFPROJ.L(F,APROJ)*WF0(F));
+
+ GDPBASE('NETITAX','RVALUE') =
+            SUM(A, ta(A)*PA0(A)*QA.L(A))
+          + SUM(A, tva(A)*PVA0(A)*QVA.L(A))
+          + SUM(CM, tm(CM)*QM.L(CM)*PWM0(CM))*EXR0
+          + SUM(CE, te(CE)*QE.L(CE)*PWE0(CE))*EXR0
+          + SUM(C, tq(C)*PQ0(C)*QQ.L(C));
+
+ GDPBASE_T(IGDPX,KGDPX,SIMT)  = GDPBASE(IGDPX,KGDPX)     ;
+
+
+ PROJEXP_T(APROJ,SIMT)   =       PROJEXP.L(APROJ)        ;
+
+
+
 ) ;
 
 
 
 $if not set climate $set climate ""
 
+$ontext
+ execute_unload "%results_dir%bui_results_%flabel%_%climate%.gdx" SAM, r, C,A,F,H,AC,INSDNG,
+                                                                       PLVALUE_T, PROJEXP_T, sPCOST, sPFIN, PCOST_T, PFIN_T, REPAYMENT_T, LOANPROD_T, GSAV_T, PSAV_T, FSAV_T, EG_T, YG_T, YTAX_T, YGPROJ_T, EH_T, gammam, betam, gammah, betah YI_T, YIF_T, CPI_T, INVSHR_T, GOVSHR_T, YF_T, PA_T, QA_T, QX_T, QD_T, QM_T, QE_T, PQ_T, PE_T, PD_T, PX_T, PXAC_T, QINV_T, QINVTOT_T, WF_T, EXR_T, WALRAS_T, QG_T, PFIN_T, MPS_T, IADJ_T, GADJ_T, QF_T, QFS_T, QFSPROJ_T, QINT_T, INSDNG_INCOME_T,
+                                                                  deltava_T, alphava_T, deltaa_T, alphaa_T, delta2va_T, alpha2va_T, delta2ene_T, alpha2ene_T, deltavae_va_T, deltavae_ene_T, alphavae_T, deltat_T, alphat_T, deltaq_T, alphaq_T, betam_T, betah_T, gammam_T, gammah_T ;
+$offtext
 
- execute_unload "%results_dir%bui_results_%flabel%_%climate%.gdx" SAM, r, C,A,F,H,AC,INSDNG, PLVALUE_T, PROJEXP_T, sPCOST, sPFIN, PCOST_T, PFIN_T, REPAYMENT_T, LOANPROD_T, GSAV_T, PSAV_T, FSAV_T, EG_T, YG_T, YTAX_T, YGPROJ_T, EH_T, gammam, betam, gammah, betah YI_T, YIF_T, CPI_T, INVSHR_T, GOVSHR_T, YF_T, PA_T, QA_T, QX_T, QD_T, QM_T, QE_T, PQ_T, PE_T, PD_T, PX_T, PXAC_T, QINV_T, QINVTOT_T, WF_T, EXR_T, WALRAS_T, QG_T, PFIN_T, MPS_T, IADJ_T, GADJ_T, QF_T, QFS_T, QFSPROJ_T, QINT_T, INSDNG_INCOME_T
+ execute_unload "%results_dir%bui_results_%flabel%_%climate%.gdx" SAM, r, C,A,F,H,AC,INSDNG,
+                                                                 GDPBASE_T,
+                                                                 PLVALUE_T, PROJEXP_T, PCOST_T, PFIN_T, REPAYMENT_T, LOANPROD_T, REPAYMENT_AUX, GSAV_T, PSAV_T, FSAV_T, EG_T, YG_T, YTAX_T, YGPROJ_T, EH_T, gammam, betam, gammah, betah YI_T, YIF_T, CPI_T, INVSHR_T, GOVSHR_T, YF_T, PA_T, QA_T, QX_T, QD_T, QM_T, QE_T, PQ_T, PE_T, PD_T, PX_T, PXAC_T, QINV_T, QINVTOT_T, WF_T, EXR_T, WALRAS_T, QG_T, PFIN_T, MPS_T, IADJ_T, GADJ_T, QF_T, QFS_T, QFSPROJ_T, QINT_T,
+                                                                 INSDNG_INCOME_T,
+                                                                 deltava_T, alphava_T, deltaa_T, alphaa_T, delta2va_T, alpha2va_T, delta2ene_T, alpha2ene_T, deltavae_va_T, deltavae_ene_T, alphavae_T, deltat_T, alphat_T, deltaq_T, alphaq_T, betam_T, betah_T, gammam_T, gammah_T ;

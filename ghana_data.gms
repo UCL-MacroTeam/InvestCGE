@@ -92,10 +92,8 @@ SET
  /
 *activities
 A-AGR
-*A-CCO
 A-IND
 A-LIND
-*A-MACH
 A-CONS
 A-TRAN
 A-ELNH
@@ -117,16 +115,11 @@ C-ENE
 C-SERV
 C-PSRV
 C-PROJ
-*TRC
 TRCDOM
 TRCEXP
 LABOR
-*LAB-RUR
-*LAB-URB
-*CAPITAL
 CAP-AGR
 CAP-OTH
-*CAP-NH
 CAP-HY
 LAND
 RUR-HH
@@ -148,10 +141,8 @@ TOTAL
  A(AC)  activities
  /
 A-AGR
-*A-CCO
 A-IND
 A-LIND
-*A-MACH
 A-CONS
 A-TRAN
 A-ELNH
@@ -171,9 +162,15 @@ B-PROJ
  AAGR(A)  agricultural activities
  /
 A-AGR
-*A-CCO
+
  /
 
+ AENE(A)  energy activities
+ /
+A-ELNH
+A-ELHY
+A-ENE
+ /
 
 ;
 
@@ -192,10 +189,8 @@ SET
  C(AC)  commodities
  /
 C-AGR
-*C-CCO
 C-IND
 C-LIND
-*C-MACH
 C-CONS
 C-TRAN
 C-ELEC
@@ -212,14 +207,12 @@ C-PROJ
  CAGR(C)    agricultural commodities
  /
 C-AGR
-*C-CCO
  /
 
  CENE(C)    energy commodities
 /
 C-ELEC
 C-ENE
-*C-IND
 /
 ;
 
